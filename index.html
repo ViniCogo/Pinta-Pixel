@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef3ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pinta Pixel">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Pinta Pixel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Pixelify+Sans:wght@600;700&display=swap">
+<style>
+/* Layout: app de tela única. Galeria em grade de "adesivos" com sombra pixelada; tela de pintura com palco central e paleta fixa embaixo. Visual claro e único, de propósito. */
+:root {
+  --bg: #eef3ff;
+  --paper: #ffffff;
+  --ink: #2a2350;
+  --ink-2: #6e6994;
+  --accent: #ff5a7a;
+  --sun: #ffd23f;
+  --line: #d6dcef;
+  --stage: #e2e8f8;
+  --hl: #c3b2ff;
+  --font-display: 'Pixelify Sans', 'Courier New', monospace;
+  --font-body: 'Baloo 2', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+  color-scheme: light;
+}
+html { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  height: 100%; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.35;
+  overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, label:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.screen { height: 100%; }
+
+/* ---------- Galeria ---------- */
+#gallery {
+  overflow-y: auto; padding-inline: 16px; padding-block: 22px 40px;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.g-head { display: flex; flex-direction: column; gap: 4px; }
+.wordmark {
+  margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(40px, 11vw, 64px);
+  line-height: 1; letter-spacing: .5px; color: var(--ink); text-wrap: balance;
+}
+.wordmark .p1 { color: var(--accent); }
+.wordmark .p2 { color: #3fae5a; }
+.wordmark .p3 { color: #4f8dff; }
+.g-head p { margin: 0; color: var(--ink-2); font-weight: 500; max-width: 40ch; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 16px; }
+.card {
+  position: relative; display: flex; flex-direction: column; background: var(--paper);
+  border: 3px solid var(--ink); border-radius: 8px; box-shadow: 4px 4px 0 var(--ink);
+  overflow: hidden; transition: transform .12s ease, box-shadow .12s ease;
+}
+.card:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+.card .open { all: unset; cursor: pointer; display: flex; flex-direction: column; }
+.card .open:focus-visible { outline: 3px solid var(--accent); outline-offset: -6px; }
+.thumb { display: block; width: 100%; aspect-ratio: 1; max-width: 100%; image-rendering: pixelated; background: var(--stage); border-bottom: 3px solid var(--ink); }
+.meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px 9px; min-width: 0; }
+.meta b { font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.badge { flex: none; font-size: 13px; font-weight: 800; padding: 1px 8px; border-radius: 99px; background: var(--stage); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.badge.go { background: #ffe1e8; color: #d1294c; }
+.badge.ok { background: var(--sun); color: var(--ink); }
+.del {
+  position: absolute; top: 6px; right: 6px; border: 2px solid var(--ink); background: var(--paper);
+  border-radius: 99px; font-size: 12px; font-weight: 800; padding: 0 9px; line-height: 22px;
+}
+.del.arm { background: var(--accent); color: #fff; }
+.card.new { border-style: dashed; box-shadow: none; background: transparent; }
+.card.new .open { aspect-ratio: auto; }
+.new-face { aspect-ratio: 1; display: grid; place-items: center; gap: 6px; align-content: center; padding: 12px; text-align: center; }
+.new-face svg { width: 54px; height: 54px; }
+.new-face b { font-size: 17px; font-weight: 800; }
+.new-face span { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.g-foot { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+
+/* ---------- Pintura ---------- */
+#paint { display: flex; flex-direction: column; background: var(--paper); }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 3px solid var(--ink); }
+.icon-btn {
+  flex: none; width: 42px; height: 42px; display: grid; place-items: center; border: 3px solid var(--ink);
+  border-radius: 10px; background: var(--paper); font-size: 22px; font-weight: 800; line-height: 1; padding: 0;
+}
+.icon-btn svg { width: 22px; height: 22px; }
+.icon-btn:active { transform: translateY(2px); }
+.icon-btn.off { color: var(--ink-2); border-color: var(--ink-2); }
+.ptitle { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ptitle strong { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ptitle span { font-size: 13px; color: var(--ink-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; background: var(--stage); border-radius: 99px; overflow: hidden; margin-top: 3px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+.chip { border: 2px solid var(--ink); background: var(--paper); border-radius: 99px; padding: 4px 12px; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.chip.arm { background: var(--accent); color: #fff; border-color: var(--accent); }
+.stage { position: relative; flex: 1; min-height: 0; background: var(--stage); overflow: hidden; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+.hint {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: var(--ink); color: #fff;
+  font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 99px; white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity .2s ease;
+}
+.hint.show { opacity: .92; }
+.tools { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 3px solid var(--ink); flex-wrap: wrap; }
+.seg { display: flex; border: 3px solid var(--ink); border-radius: 12px; overflow: hidden; }
+.seg button { border: 0; background: var(--paper); padding: 6px 10px; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 5px; }
+.seg button + button { border-left: 3px solid var(--ink); }
+.seg button.on { background: var(--sun); }
+.seg svg { width: 18px; height: 18px; flex: none; }
+.tools .grow { flex: 1; }
+.palette {
+  display: flex; gap: 10px; overflow-x: auto; padding: 12px 12px 14px; background: var(--paper);
+  border-top: 3px solid var(--ink); scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.palette::-webkit-scrollbar { display: none; }
+.sw {
+  flex: none; width: 58px; height: 58px; border: 0; border-radius: 50%; padding: 4px; scroll-snap-align: center;
+  background: conic-gradient(var(--accent) var(--p, 0%), var(--line) 0); transition: transform .12s ease;
+}
+.sw i {
+  display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--c);
+  color: var(--t); font-style: normal; font-size: 19px; font-weight: 800; border: 3px solid var(--paper);
+}
+.sw.on { transform: translateY(-5px) scale(1.06); }
+.sw.on i { box-shadow: 0 0 0 3px var(--ink); }
+.sw.done { background: conic-gradient(#3fae5a 100%, #3fae5a 0); }
+.sw.done i { font-size: 0; }
+.sw.done i::after { content: ""; width: 18px; height: 10px; border-left: 4px solid var(--t); border-bottom: 4px solid var(--t); transform: translateY(-2px) rotate(-45deg); }
+
+/* ---------- Folhas e celebração ---------- */
+.overlay { position: fixed; inset: 0; z-index: 10; background: rgba(42, 35, 80, .45); display: grid; place-items: end center; padding-inline: 12px; padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.sheet {
+  width: 100%; max-width: 460px; max-height: 100%; overflow-y: auto; background: var(--paper); border: 3px solid var(--ink);
+  border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); padding: 18px 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.sheet h2 { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1.1; text-wrap: balance; }
+.sheet p { margin: 0; color: var(--ink-2); font-weight: 500; }
+.file-btn { display: flex; align-items: center; justify-content: center; gap: 8px; border: 3px dashed var(--ink); border-radius: 12px; padding: 12px; font-weight: 800; cursor: pointer; background: var(--bg); }
+.file-btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.imp-prev { display: grid; place-items: center; background: var(--stage); border-radius: 10px; padding: 10px; }
+.imp-prev canvas { width: min(220px, 70vw); aspect-ratio: 1; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); background: var(--paper); }
+.imp-prev em { font-style: normal; color: var(--ink-2); font-weight: 700; font-size: 14px; padding: 30px 0; }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 800; }
+.opt input { flex: 1; min-width: 0; max-width: 220px; border: 3px solid var(--ink); border-radius: 10px; padding: 6px 10px; font: inherit; font-weight: 700; color: var(--ink); background: var(--paper); user-select: text; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.btn { border: 3px solid var(--ink); border-radius: 12px; padding: 8px 16px; font-weight: 800; background: var(--paper); }
+.btn.primary { background: var(--accent); color: #fff; box-shadow: 3px 3px 0 var(--ink); }
+.btn.primary:disabled { opacity: .45; box-shadow: none; }
+.note { font-size: 13px; color: var(--ink-2); }
+#done .sheet { align-items: center; text-align: center; }
+#done canvas.big { width: min(240px, 68vw); aspect-ratio: 1; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); }
+#done h2 { font-size: 34px; color: var(--accent); }
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 11; }
+@media (min-width: 700px) { .overlay { place-items: center; } }
+@media (prefers-reduced-motion: reduce) { .card, .sw, .bar i, .hint { transition: none; } }
+</style>
+
+</head>
+<body>
+<section id="gallery" class="screen">
+  <div class="wrap">
+    <header class="g-head">
+      <h1 class="wordmark"><span class="p1">Pinta</span><span class="p3">Pi</span><span class="p2">x</span>el</h1>
+      <p>Escolha um desenho e pinte quadradinho por quadradinho. Sem anúncios, sem pressa.</p>
+    </header>
+    <div class="cards" id="cards"></div>
+    <p class="g-foot">O progresso fica salvo neste aparelho.</p>
+  </div>
+</section>
+
+<section id="paint" class="screen" hidden>
+  <div class="topbar">
+    <button class="icon-btn" id="back" aria-label="Voltar para os desenhos">
+      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" fill="currentColor"><path d="M4 1h1v1H4zM3 2h1v1H3zM2 3h1v2H2zM3 5h1v1H3zM4 6h1v1H4z"/></svg>
+    </button>
+    <div class="ptitle">
+      <strong id="pname"></strong>
+      <span id="pperc">0%</span>
+      <div class="bar"><i id="pbar"></i></div>
+    </div>
+    <button class="chip" id="restart">Recomeçar</button>
+  </div>
+  <div class="stage" id="stage">
+    <canvas id="cv" aria-label="Desenho para pintar"></canvas>
+    <div class="hint" id="hint"></div>
+  </div>
+  <div class="tools">
+    <div class="seg" role="group" aria-label="Ferramenta">
+      <button data-tool="brush" class="on" aria-pressed="true">
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#ff5a7a" d="M5 0h3v3H7v1H6v1H5V4H4V3h1z"/><path fill="#2a2350" d="M3 4h1v1h1v1H4v1H2v1H0V6h1V5h2z"/></svg>Pincel
+      </button>
+      <button data-tool="bucket" aria-pressed="false">
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#2a2350" d="M1 2h5v1h1v4H2V6H1z"/><path fill="#4f8dff" d="M2 3h4v3H3V5H2z"/><path fill="#4f8dff" d="M7 3h1v3H7z"/></svg>Balde
+      </button>
+      <button data-tool="move" aria-pressed="false">
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" fill="#2a2350"><path d="M3 0h2v1H3zM0 3h1v2H0zM7 3h1v2H7zM3 7h2v1H3zM3.5 1h1v6h-1zM1 3.5h6v1H1z"/></svg>Mover
+      </button>
+    </div>
+    <span class="grow"></span>
+    <button class="icon-btn" id="zout" aria-label="Diminuir zoom">−</button>
+    <button class="icon-btn" id="zin" aria-label="Aumentar zoom">+</button>
+    <button class="icon-btn" id="snd" aria-label="Som ligado">
+      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" fill="currentColor"><path d="M0 3h2v2H0zM2 2h1v4H2zM3 1h1v6H3zM5 2h1v1H5zM5 5h1v1H5zM6 3h1v2H6z"/></svg>
+    </button>
+  </div>
+  <div class="palette" id="palette" aria-label="Cores"></div>
+</section>
+
+<div class="overlay" id="importer" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="imp-t">
+    <h2 id="imp-t">Desenho com sua foto</h2>
+    <p>Escolha uma imagem do celular, como um desenho dela ou uma foto do bichinho. Ela vira um desenho de pintar por número.</p>
+    <label class="file-btn">
+      <input type="file" id="file" accept="image/*">
+      <svg width="22" height="22" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#2a2350" d="M0 2h8v5H0z"/><path fill="#a9dcff" d="M1 3h6v3H1z"/><path fill="#72cf6a" d="M1 5h2V4h1v1h1V4h1v1h1v1H1z"/><path fill="#ffd23f" d="M5 3h1v1H5z"/></svg>
+      <span id="file-label">Escolher imagem</span>
+    </label>
+    <div class="imp-prev" id="imp-prev"><em>A prévia aparece aqui</em></div>
+    <div class="opt"><span>Quadradinhos</span>
+      <div class="seg" id="optSize"><button data-v="24">24</button><button data-v="32" class="on">32</button><button data-v="48">48</button></div>
+    </div>
+    <div class="opt"><span>Cores</span>
+      <div class="seg" id="optColors"><button data-v="8">8</button><button data-v="12" class="on">12</button><button data-v="16">16</button></div>
+    </div>
+    <label class="opt"><span>Nome</span><input id="impname" value="Meu desenho" maxlength="24" autocomplete="off"></label>
+    <div class="actions">
+      <button class="btn" id="impcancel">Cancelar</button>
+      <button class="btn primary" id="impok" disabled>Criar desenho</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="done" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="done-t">
+    <h2 id="done-t">Parabéns!</h2>
+    <canvas class="big" id="donecv"></canvas>
+    <p id="done-msg">Você pintou o desenho inteirinho.</p>
+    <div class="actions">
+      <button class="btn" id="donesee">Ver meu desenho</button>
+      <button class="btn primary" id="donenext">Escolher outro</button>
+    </div>
+  </div>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+const ART = (function () {
+  const N = 32;
+  const G = (bg) => new Array(N * N).fill(bg);
+  const L = () => new Array(N * N).fill(-1);
+  const inb = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+  const each = (fn) => { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) fn(x, y); };
+  const ell = (g, cx, cy, rx, ry, c) => each((x, y) => { const dx = (x + .5 - cx) / rx, dy = (y + .5 - cy) / ry; if (dx * dx + dy * dy <= 1) g[y * N + x] = c; });
+  const rect = (g, x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inb(x, y)) g[y * N + x] = c; };
+  const px = (g, list, c) => { for (const [x, y] of list) if (inb(x, y)) g[y * N + x] = c; };
+  const inPoly = (X, Y, p) => { let s = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > Y) !== (yj > Y) && X < (xj - xi) * (Y - yi) / (yj - yi) + xi) s = !s; } return s; };
+  const poly = (g, p, c) => each((x, y) => { if (inPoly(x + .5, y + .5, p)) g[y * N + x] = c; });
+  const where = (g, pred, c) => each((x, y) => { if (pred(x, y, g[y * N + x])) g[y * N + x] = c; });
+  const outline = (l, c) => { const o = l.slice(); each((x, y) => { if (l[y * N + x] !== -1) return; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (inb(nx, ny) && l[ny * N + nx] !== -1) { o[y * N + x] = c; break; } } }); return o; };
+  const comp = (g, l) => { for (let i = 0; i < N * N; i++) if (l[i] !== -1) g[i] = l[i]; };
+  const mirror = (list) => list.concat(list.map(([x, y]) => [31 - x, y]));
+
+  const pics = [
+    {
+      id: 'cachorrinho', name: 'Cachorrinho',
+      pal: ['#bfe6ff', '#86d36f', '#dba36c', '#8f5a3c', '#f6e3c3', '#3b2a2a', '#f58fab', '#ffffff', '#e5484d', '#ffd84d'],
+      build() {
+        const g = G(0); rect(g, 0, 27, 31, 31, 1);
+        px(g, [[3, 28], [27, 29], [6, 30]], 9); px(g, [[2, 28], [4, 28], [26, 29], [28, 29]], 7);
+        const l = L();
+        ell(l, 16, 25, 8.5, 6, 2); ell(l, 16, 26.5, 4, 3.5, 4);
+        ell(l, 11.5, 30, 2.6, 1.6, 4); ell(l, 20.5, 30, 2.6, 1.6, 4);
+        ell(l, 16, 12.5, 9, 8, 2);
+        ell(l, 7.2, 13, 2.8, 6.2, 3); ell(l, 24.8, 13, 2.8, 6.2, 3);
+        ell(l, 20.5, 10.5, 3, 2.6, 3);
+        ell(l, 16, 16.5, 4.6, 3.3, 4);
+        rect(l, 15, 14, 16, 15, 5); px(l, [[14, 14], [17, 14]], 5);
+        rect(l, 11, 10, 12, 11, 5); px(l, [[11, 10]], 7);
+        rect(l, 20, 10, 21, 11, 5); px(l, [[20, 10]], 7);
+        px(l, [[15, 17], [16, 17], [14, 16], [17, 16]], 5);
+        rect(l, 15, 18, 16, 19, 6);
+        where(l, (x, y, v) => y === 21 && v !== -1 && x > 9 && x < 22, 8);
+        px(l, [[16, 22]], 9);
+        const o = outline(l, 5); comp(g, o); return g;
+      }
+    },
+    {
+      id: 'gatinho', name: 'Gatinho',
+      pal: ['#eadfff', '#f5a54a', '#d97a2b', '#fff1d6', '#f7a1b5', '#5cc46c', '#3a2b3b', '#ffffff'],
+      build() {
+        const g = G(0);
+        px(g, [[3, 3], [28, 4], [2, 27], [29, 28], [4, 30], [27, 2]], 4);
+        const l = L();
+        poly(l, [[5, 15], [7, 3], [15, 10]], 1); poly(l, [[27, 15], [25, 3], [17, 10]], 1);
+        poly(l, [[8, 11], [8.5, 6.5], [12, 10]], 4); poly(l, [[24, 11], [23.5, 6.5], [20, 10]], 4);
+        ell(l, 16, 18, 12, 9.5, 1);
+        rect(l, 15, 9, 16, 12, 2); rect(l, 12, 10, 12, 11, 2); rect(l, 19, 10, 19, 11, 2);
+        rect(l, 4, 18, 7, 18, 2); rect(l, 4, 21, 7, 21, 2); rect(l, 24, 18, 27, 18, 2); rect(l, 24, 21, 27, 21, 2);
+        ell(l, 13.5, 22.5, 3.6, 2.8, 3); ell(l, 18.5, 22.5, 3.6, 2.8, 3);
+        rect(l, 15, 20, 16, 20, 4); px(l, [[14, 19], [15, 19], [16, 19], [17, 19]], 4);
+        px(l, [[15, 21], [16, 21], [14, 23], [17, 23], [15, 22], [16, 22]], 6);
+        rect(l, 10, 14, 12, 18, 5); rect(l, 19, 14, 21, 18, 5);
+        rect(l, 11, 15, 11, 17, 6); rect(l, 20, 15, 20, 17, 6);
+        px(l, [[10, 14], [19, 14]], 7);
+        px(l, [[7, 23], [24, 23]], 4); px(l, [[8, 23], [23, 23]], 4);
+        const o = outline(l, 6); comp(g, o); return g;
+      }
+    },
+    {
+      id: 'sorvete', name: 'Sorvete',
+      pal: ['#d3f2ee', '#eab56c', '#c88a42', '#ff9fc6', '#9fe7c2', '#e5394b', '#4a2f3a', '#ffffff', '#ffd84d', '#6aa8ff'],
+      build() {
+        const g = G(0);
+        px(g, [[3, 4], [27, 6], [4, 22], [28, 26], [25, 30], [5, 12]], 7);
+        const l = L();
+        poly(l, [[8.5, 17], [23.5, 17], [16, 31.5]], 1);
+        where(l, (x, y, v) => v === 1 && ((x + y) % 4 === 0 || ((x - y) % 4 + 4) % 4 === 0), 2);
+        ell(l, 16, 16.5, 8.6, 4.6, 4);
+        rect(l, 10, 19, 10, 21, 4); rect(l, 19, 19, 19, 22, 4); rect(l, 14, 19, 14, 20, 4);
+        ell(l, 16, 9.8, 6.8, 5.8, 3);
+        rect(l, 12, 13, 12, 15, 3); rect(l, 20, 13, 20, 14, 3);
+        ell(l, 16, 3.2, 2.1, 2.1, 5); px(l, [[17, 0], [18, 0]], 6); px(l, [[17, 1]], 6);
+        px(l, [[15, 2]], 7);
+        px(l, [[13, 7], [18, 11], [20, 8]], 8); px(l, [[16, 9], [12, 11], [19, 6]], 9);
+        px(l, [[11, 8], [11, 9], [12, 7]], 7); px(l, [[10, 15], [11, 15]], 7);
+        const o = outline(l, 6); comp(g, o); return g;
+      }
+    },
+    {
+      id: 'arco-iris', name: 'Arco-íris',
+      pal: ['#a9dcff', '#ff5c5c', '#ff9f43', '#ffd93b', '#5ccb6a', '#4f8dff', '#a46cff', '#ffffff', '#cfe0f0', '#ffc21a'],
+      build() {
+        const g = G(0);
+        each((x, y) => { const d = Math.hypot(x + .5 - 16, y + .5 - 27); if (y <= 26 && d >= 6 && d < 15.6) g[y * N + x] = 1 + Math.min(5, Math.floor((15.6 - d) / 1.6)); });
+        ell(g, 4, 4, 3.2, 3.2, 9); px(g, [[4, 9], [9, 4], [8, 8]], 9);
+        const cloud = (cx, cy) => { const l = L(); ell(l, cx, cy, 5, 3, 7); ell(l, cx - 3, cy + 0.5, 3, 2.4, 7); ell(l, cx + 3, cy + 0.5, 3, 2.4, 7); ell(l, cx + 0.5, cy - 2, 3, 2.6, 7); where(l, (x, y, v) => v === 7 && y >= cy + 1.5, 8); comp(g, l); };
+        cloud(4.5, 27); cloud(27.5, 27);
+        cloud(23, 5);
+        return g;
+      }
+    },
+    {
+      id: 'morango', name: 'Morango',
+      pal: ['#ffe4d6', '#f03e4f', '#c4283b', '#ffe07a', '#55b95f', '#2f8a43', '#4a2228', '#ffffff', '#ff9aae'],
+      build() {
+        const g = G(0);
+        px(g, mirror([[3, 4], [5, 26], [2, 15]]), 8);
+        const l = L();
+        ell(l, 16, 16.5, 11.5, 8, 1); poly(l, [[5.5, 17], [26.5, 17], [18, 29.5], [14, 29.5]], 1);
+        ell(l, 16, 29, 2.6, 1.6, 1);
+        where(l, (x, y, v) => v === 1 && Math.hypot((x + .5 - 13.5) / 11, (y + .5 - 15.5) / 12) > 1, 2);
+        where(l, (x, y, v) => (v === 1 || v === 2) && y % 3 === 0 && (x + y) % 4 === 0 && !(x >= 8 && x <= 23 && y >= 15 && y <= 23) && y > 10, 3);
+        rect(l, 11, 17, 11, 18, 6); rect(l, 20, 17, 20, 18, 6); px(l, [[11, 17], [20, 17]], 7);
+        px(l, [[14, 20], [15, 21], [16, 21], [17, 20]], 6);
+        ell(l, 9.5, 20.5, 1.6, 1, 8); ell(l, 22.5, 20.5, 1.6, 1, 8);
+        ell(l, 10.5, 9, 5, 2.2, 4); ell(l, 21.5, 9, 5, 2.2, 4); ell(l, 16, 8.5, 2.6, 3.2, 4);
+        ell(l, 13, 10.5, 3, 1.6, 4); ell(l, 19, 10.5, 3, 1.6, 4);
+        rect(l, 16, 2, 16, 6, 5); px(l, [[17, 2], [17, 1]], 5);
+        px(l, [[8, 9], [9, 9], [10, 9], [22, 9], [23, 9], [21, 9]], 5);
+        px(l, [[9, 13], [10, 12]], 7);
+        const o = outline(l, 6); comp(g, o); return g;
+      }
+    },
+    {
+      id: 'peixinho', name: 'Peixinho',
+      pal: ['#6ec8f0', '#a7e0f8', '#ff8a3d', '#ffd23f', '#24324a', '#ffffff', '#f3d69c', '#3fbf7f', '#ff7aa8'],
+      build() {
+        const g = G(0);
+        each((x, y) => { if ((y === 3 || y === 24) && (x + (y === 3 ? 0 : 2)) % 8 < 3) g[y * N + x] = 1; });
+        rect(g, 0, 28, 31, 31, 6); px(g, [[5, 29], [12, 30], [20, 29], [27, 30]], 3);
+        each((x, y) => { if (y >= 17 && y <= 28 && x === 3 + ((y >> 1) % 2)) g[y * N + x] = 7; if (y >= 20 && y <= 28 && x === 7 - ((y >> 1) % 2)) g[y * N + x] = 7; });
+        ell(g, 26.5, 28, 3.5, 3, 8); px(g, [[24, 25], [24, 24], [29, 24], [29, 25], [28, 23]], 8);
+        const b = L(); px(b, [[4, 7], [6, 11], [2, 2], [27, 3], [29, 6]], 5); comp(g, b);
+        const l = L();
+        poly(l, [[21, 14], [30.5, 6.5], [28, 14], [30.5, 21.5]], 3);
+        poly(l, [[10, 9], [16, 3.5], [20, 9.5]], 3);
+        poly(l, [[12, 18], [16, 23], [18, 18]], 3);
+        ell(l, 14.5, 14, 9.5, 6.5, 2);
+        where(l, (x, y, v) => v === 2 && (x === 13 || x === 14 || x === 18 || x === 19), 3);
+        ell(l, 9, 12.5, 2.1, 2.1, 5); rect(l, 8, 12, 9, 13, 4); px(l, [[8, 12]], 5);
+        px(l, [[5, 15], [6, 16]], 4);
+        const o = outline(l, 4); comp(g, o); return g;
+      }
+    },
+    {
+      id: 'foguete', name: 'Foguete',
+      pal: ['#2b2d6e', '#ffe066', '#f6f6fb', '#c4c7e0', '#ff4d5e', '#7ad3ff', '#ff9a3c', '#15163a', '#b58cff', '#8c62e0'],
+      build() {
+        const g = G(0);
+        px(g, [[3, 4], [26, 3], [29, 11], [4, 15], [7, 23], [23, 9], [2, 28], [10, 2], [28, 18], [6, 9]], 1);
+        ell(g, 27.5, 28.5, 5, 5, 8); px(g, [[26, 26], [27, 26], [28, 29], [29, 29], [25, 30]], 9);
+        const l = L();
+        poly(l, [[11, 19], [6.5, 27.5], [11.5, 25]], 4); poly(l, [[21, 19], [25.5, 27.5], [20.5, 25]], 4);
+        poly(l, [[12.5, 25], [19.5, 25], [16, 31.5]], 6); poly(l, [[14, 25], [18, 25], [16, 29.5]], 1);
+        ell(l, 16, 14.5, 5.6, 11, 2);
+        where(l, (x, y, v) => v === 2 && y < 8, 4);
+        where(l, (x, y, v) => v === 2 && x >= 19, 3);
+        ell(l, 16, 13, 3.4, 3.4, 3); ell(l, 16, 13, 2.4, 2.4, 5); px(l, [[15, 12]], 2);
+        rect(l, 15, 21, 16, 26, 4);
+        rect(l, 12, 19, 19, 19, 3);
+        const o = outline(l, 7); comp(g, o); return g;
+      }
+    },
+    {
+      id: 'casinha', name: 'Casinha',
+      pal: ['#b8e4ff', '#72cf6a', '#ffe08a', '#e85d5d', '#9b6236', '#8fd3ff', '#3d2c2c', '#ffffff', '#3fae5a', '#ffc928', '#ff8fb8'],
+      build() {
+        const g = G(0); rect(g, 0, 27, 31, 31, 1);
+        ell(g, 28, 4, 3.3, 3.3, 9); px(g, [[28, 9], [23, 4], [24, 8]], 9);
+        ell(g, 7, 4, 3.4, 1.7, 7); ell(g, 9.5, 3.2, 2.2, 1.7, 7);
+        px(g, [[3, 29], [9, 30], [27, 30], [20, 29]], 10); px(g, [[2, 29], [4, 29], [26, 30], [28, 30]], 7);
+        const l = L();
+        rect(l, 16, 6, 18, 11, 3);
+        rect(l, 5, 15, 19, 27, 2);
+        poly(l, [[2.5, 16], [12, 5.5], [21.5, 16]], 3);
+        rect(l, 10, 20, 13, 27, 4); px(l, [[12, 24]], 9);
+        rect(l, 6, 18, 8, 21, 5); rect(l, 15, 18, 18, 21, 5);
+        rect(l, 16, 18, 16, 21, 7); rect(l, 15, 19, 18, 19, 7);
+        rect(l, 7, 18, 7, 21, 7);
+        ell(l, 12, 12, 1.6, 1.6, 5);
+        const o = outline(l, 6); comp(g, o);
+        const t = L(); rect(t, 24, 19, 25, 27, 4); ell(t, 24.5, 15.5, 4.8, 5.3, 8); px(t, [[23, 14], [26, 17], [22, 17]], 3);
+        comp(g, outline(t, 6));
+        return g;
+      }
+    }
+  ];
+
+  return pics.map((p) => {
+    const g = p.build();
+    const used = [...new Set(g)].sort((a, b) => a - b);
+    const map = new Map(used.map((u, i) => [u, i]));
+    return { id: p.id, name: p.name, size: N, pal: used.map((u) => p.pal[u]), grid: g.map((v) => map.get(v)) };
+  });
+})();
+
+</script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const KEY = 'pintapixel:v1:';
+  const store = {
+    get(k) { try { return localStorage.getItem(KEY + k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(KEY + k, v); return true; } catch (e) { return false; } },
+    del(k) { try { localStorage.removeItem(KEY + k); } catch (e) {} }
+  };
+
+  /* ---------- cores ---------- */
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const hex = (c) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const lum = (h) => { const [r, g, b] = rgb(h); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+  const greyOf = (h) => { const v = 250 - (1 - lum(h)) * 52; return `rgb(${Math.round(v - 3)},${Math.round(v - 1)},${Math.round(v + 3)})`; };
+  const CSS = getComputedStyle(document.documentElement);
+  const C = { ink: CSS.getPropertyValue('--ink').trim(), ink2: CSS.getPropertyValue('--ink-2').trim(), line: CSS.getPropertyValue('--line').trim(), stage: CSS.getPropertyValue('--stage').trim(), hl: CSS.getPropertyValue('--hl').trim() };
+
+  /* ---------- desenhos ---------- */
+  let customs = [];
+  try { customs = JSON.parse(store.get('custom') || '[]'); } catch (e) { customs = []; }
+  const decode = (c) => ({ id: c.id, name: c.name, size: c.size, pal: c.pal, grid: Array.from(c.g, (ch) => parseInt(ch, 36)), custom: true });
+  let pics = [];
+  const rebuild = () => { pics = customs.map(decode).concat(ART); pics.forEach(prep); };
+  function prep(p) { p.greys = p.pal.map(greyOf); p.counts = p.pal.map(() => 0); p.grid.forEach((v) => p.counts[v]++); }
+  function getProg(p) {
+    const n = p.size * p.size, s = store.get('prog:' + p.id), a = new Uint8Array(n);
+    if (s && s.length === n) for (let i = 0; i < n; i++) a[i] = s.charCodeAt(i) === 49 ? 1 : 0;
+    return a;
+  }
+  const saveProg = (p, a) => store.set('prog:' + p.id, Array.prototype.join.call(a, ''));
+  const pctOf = (p, a) => { let k = 0; for (let i = 0; i < a.length; i++) k += a[i]; return Math.floor((k / a.length) * 100); };
+
+  function drawThumb(cv, p, a) {
+    const N = p.size; cv.width = N; cv.height = N;
+    const x = cv.getContext('2d'), im = x.createImageData(N, N);
+    const cols = p.pal.map(rgb), gs = p.pal.map((h) => { const v = 250 - (1 - lum(h)) * 52; return [v - 3, v - 1, v + 3]; });
+    for (let i = 0; i < N * N; i++) { const c = a[i] ? cols[p.grid[i]] : gs[p.grid[i]]; im.data.set([c[0], c[1], c[2], 255], i * 4); }
+    x.putImageData(im, 0, 0);
+  }
+
+  /* ---------- galeria ---------- */
+  function renderGallery() {
+    const box = $('#cards'); box.textContent = '';
+    const nw = document.createElement('div'); nw.className = 'card new';
+    nw.innerHTML = '<button class="open" id="newbtn"><div class="new-face"><svg viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#ff5a7a" d="M3 0h1v3h3v1H4v3H3V4H0V3h3z"/></svg><b>Usar minha foto</b><span>Transforme uma imagem em desenho</span></div></button>';
+    box.appendChild(nw);
+    nw.querySelector('button').addEventListener('click', openImporter);
+    pics.forEach((p) => {
+      const a = getProg(p), pc = pctOf(p, a);
+      const card = document.createElement('div'); card.className = 'card';
+      const b = document.createElement('button'); b.className = 'open'; b.setAttribute('aria-label', 'Pintar ' + p.name);
+      const cv = document.createElement('canvas'); cv.className = 'thumb'; drawThumb(cv, p, a);
+      const meta = document.createElement('div'); meta.className = 'meta';
+      const nm = document.createElement('b'); nm.textContent = p.name;
+      const bd = document.createElement('span'); bd.className = 'badge' + (pc >= 100 ? ' ok' : pc > 0 ? ' go' : '');
+      bd.textContent = pc >= 100 ? 'Pronto!' : pc > 0 ? pc + '%' : p.size + '×' + p.size;
+      meta.append(nm, bd); b.append(cv, meta); card.appendChild(b);
+      b.addEventListener('click', () => openPic(p));
+      if (p.custom) {
+        const d = document.createElement('button'); d.className = 'del'; d.textContent = 'Apagar';
+        let t = 0;
+        d.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!d.classList.contains('arm')) { d.classList.add('arm'); d.textContent = 'Apagar mesmo?'; clearTimeout(t); t = setTimeout(() => { d.classList.remove('arm'); d.textContent = 'Apagar'; }, 3000); return; }
+          customs = customs.filter((c) => c.id !== p.id); store.set('custom', JSON.stringify(customs)); store.del('prog:' + p.id); rebuild(); renderGallery();
+        });
+        card.appendChild(d);
+      }
+      box.appendChild(card);
+    });
+  }
+
+  /* ---------- som ---------- */
+  let actx = null, muted = store.get('mute') === '1', lastPop = 0;
+  const NOTES = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520, 4186];
+  function ensureAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === 'suspended') actx.resume(); }
+  function tone(f, t0, dur, vol, type) {
+    if (!actx || muted) return;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'triangle'; o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+    const t = actx.currentTime + (t0 || 0); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function pop(idx) { const n = performance.now(); if (n - lastPop < 45) return; lastPop = n; tone(NOTES[idx % NOTES.length], 0, 0.09, 0.07); }
+  function chord() { [0, 2, 4, 7].forEach((k, j) => tone(NOTES[k], j * 0.07, 0.25, 0.08)); }
+  function fanfare() { [0, 2, 4, 7, 4, 7, 9].forEach((k, j) => tone(NOTES[k], j * 0.11, 0.3, 0.09, 'square')); }
+  function setSnd() { const b = $('#snd'); b.classList.toggle('off', muted); b.setAttribute('aria-label', muted ? 'Som desligado' : 'Som ligado'); }
+
+  /* ---------- pintura ---------- */
+  const cv = $('#cv'), ctx = cv.getContext('2d'), stage = $('#stage');
+  let cur = null, prog = null, rem = [], sel = 0, tool = 'brush', W = 0, H = 0, dpr = 1, raf = 0, saveT = 0;
+  const view = { s: 10, ox: 0, oy: 0, fit: 10 };
+
+  function openPic(p) {
+    cur = p; prog = getProg(p);
+    rem = p.counts.slice(); for (let i = 0; i < prog.length; i++) if (prog[i]) rem[p.grid[i]]--;
+    sel = Math.max(0, rem.findIndex((r) => r > 0));
+    $('#pname').textContent = p.name;
+    $('#gallery').hidden = true; $('#paint').hidden = false;
+    resize(); fit(); buildPalette(); updatePerc(); req();
+    hint('Toque na cor e depois nos quadradinhos com o mesmo número');
+  }
+  function closePic() {
+    if (cur) saveProg(cur, prog);
+    cur = null; $('#paint').hidden = true; $('#gallery').hidden = false; renderGallery();
+  }
+  function resize() {
+    const r = stage.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio || 1, 3);
+    W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  }
+  function fit() {
+    const N = cur.size; view.fit = (Math.min(W, H) * 0.94) / N; view.s = view.fit;
+    view.ox = (W - N * view.s) / 2; view.oy = (H - N * view.s) / 2;
+  }
+  function clampView() {
+    const N = cur.size, S = N * view.s;
+    view.s = Math.max(view.fit * 0.8, Math.min(70, view.s));
+    const S2 = N * view.s;
+    view.ox = Math.min(Math.max(view.ox, Math.min(W * 0.5 - S2, (W - S2) / 2)), Math.max(W * 0.5, (W - S2) / 2));
+    view.oy = Math.min(Math.max(view.oy, Math.min(H * 0.5 - S2, (H - S2) / 2)), Math.max(H * 0.5, (H - S2) / 2));
+    return S;
+  }
+  function zoomAt(px, py, ns) {
+    const cx = (px - view.ox) / view.s, cy = (py - view.oy) / view.s;
+    view.s = Math.max(view.fit * 0.8, Math.min(70, ns));
+    view.ox = px - cx * view.s; view.oy = py - cy * view.s; clampView(); req();
+  }
+  const req = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); };
+
+  function draw() {
+    if (!cur) return;
+    const N = cur.size, s = view.s, g = cur.grid, pal = cur.pal, gs = cur.greys;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = C.stage; ctx.fillRect(0, 0, W, H);
+    const L = Math.round(view.ox), T = Math.round(view.oy), R = Math.round(view.ox + N * s), B = Math.round(view.oy + N * s);
+    ctx.fillStyle = 'rgba(42,35,80,.18)'; ctx.fillRect(L + 4, T + 4, R - L, B - T);
+    ctx.fillStyle = C.line; ctx.fillRect(L, T, R - L, B - T);
+    const x0 = Math.max(0, Math.floor(-view.ox / s)), x1 = Math.min(N - 1, Math.floor((W - view.ox) / s));
+    const y0 = Math.max(0, Math.floor(-view.oy / s)), y1 = Math.min(N - 1, Math.floor((H - view.oy) / s));
+    const gap = s >= 7 ? 1 : 0, nums = s >= 11;
+    const X = (x) => Math.round(view.ox + x * s), Y = (y) => Math.round(view.oy + y * s);
+    for (let y = y0; y <= y1; y++) {
+      const ya = Y(y), yb = Y(y + 1);
+      for (let x = x0; x <= x1; x++) {
+        const i = y * N + x, v = g[i], xa = X(x), xb = X(x + 1);
+        if (prog[i]) { ctx.fillStyle = pal[v]; ctx.fillRect(xa, ya, xb - xa, yb - ya); }
+        else { ctx.fillStyle = v === sel ? C.hl : gs[v]; ctx.fillRect(xa, ya, xb - xa - gap, yb - ya - gap); }
+      }
+    }
+    if (nums) {
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `800 ${Math.max(8, Math.floor(s * 0.5))}px 'Baloo 2', system-ui, sans-serif`;
+      for (let y = y0; y <= y1; y++) {
+        const ya = Y(y), yb = Y(y + 1);
+        for (let x = x0; x <= x1; x++) {
+          const i = y * N + x; if (prog[i]) continue;
+          const v = g[i], xa = X(x), xb = X(x + 1);
+          ctx.fillStyle = v === sel ? C.ink : C.ink2;
+          ctx.fillText(String(v + 1), xa + (xb - xa - gap) / 2, ya + (yb - ya - gap) / 2 + s * 0.06);
+        }
+      }
+    }
+  }
+
+  function buildPalette() {
+    const box = $('#palette'); box.textContent = '';
+    cur.pal.forEach((h, k) => {
+      const b = document.createElement('button'); b.className = 'sw'; b.dataset.k = k;
+      b.style.setProperty('--c', h); b.style.setProperty('--t', lum(h) > 0.62 ? C.ink : '#ffffff');
+      b.setAttribute('aria-label', 'Cor ' + (k + 1));
+      const i = document.createElement('i'); i.textContent = k + 1; b.appendChild(i);
+      b.addEventListener('click', () => select(k));
+      box.appendChild(b); updateSwatch(k);
+    });
+    markSel();
+  }
+  function updateSwatch(k) {
+    const b = $('#palette').children[k]; if (!b) return;
+    const done = rem[k] <= 0, p = ((cur.counts[k] - rem[k]) / cur.counts[k]) * 100;
+    b.style.setProperty('--p', p.toFixed(1) + '%'); b.classList.toggle('done', done);
+    b.setAttribute('aria-label', 'Cor ' + (k + 1) + (done ? ', pronta' : ', faltam ' + rem[k]));
+  }
+  function markSel() {
+    [...$('#palette').children].forEach((b, k) => { b.classList.toggle('on', k === sel); b.setAttribute('aria-pressed', k === sel); });
+    const b = $('#palette').children[sel];
+    if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+  function select(k) { sel = k; markSel(); req(); if (rem[k] <= 0) hint('Essa cor já está pronta!'); }
+  function updatePerc() {
+    const pc = pctOf(cur, prog); $('#pperc').textContent = pc + '% pintado'; $('#pbar').style.width = pc + '%';
+  }
+  let hintT = 0;
+  function hint(t) { const h = $('#hint'); h.textContent = t; h.classList.add('show'); clearTimeout(hintT); hintT = setTimeout(() => h.classList.remove('show'), 2600); }
+
+  function afterPaint(k) {
+    updateSwatch(k); updatePerc(); req();
+    clearTimeout(saveT); saveT = setTimeout(() => cur && saveProg(cur, prog), 400);
+    if (rem[k] <= 0) {
+      if (rem.every((r) => r <= 0)) { saveProg(cur, prog); setTimeout(celebrate, 350); return; }
+      chord();
+      const n = cur.pal.length; for (let j = 1; j <= n; j++) { const q = (k + j) % n; if (rem[q] > 0) { setTimeout(() => select(q), 250); break; } }
+    }
+  }
+  function paintIdx(i) {
+    if (prog[i] || cur.grid[i] !== sel) return false;
+    prog[i] = 1; rem[sel]--; pop(sel); return true;
+  }
+  const cellAt = (px, py) => { const x = Math.floor((px - view.ox) / view.s), y = Math.floor((py - view.oy) / view.s); return x >= 0 && y >= 0 && x < cur.size && y < cur.size ? [x, y] : null; };
+  let wrongN = 0;
+  function brushAt(px, py) {
+    const c = cellAt(px, py); if (!c) return;
+    const i = c[1] * cur.size + c[0];
+    if (paintIdx(i)) afterPaint(sel);
+    else if (!prog[i]) { wrongN++; if (wrongN === 1) hint('Esse é o número ' + (cur.grid[i] + 1) + '. Escolha essa cor embaixo.'); }
+  }
+  function brushLine(ax, ay, bx, by) {
+    const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / Math.max(2, view.s * 0.5)));
+    let any = false;
+    for (let t = 1; t <= steps; t++) {
+      const c = cellAt(ax + (bx - ax) * t / steps, ay + (by - ay) * t / steps); if (!c) continue;
+      if (paintIdx(c[1] * cur.size + c[0])) any = true;
+    }
+    if (any) afterPaint(sel);
+  }
+  function bucketAt(px, py) {
+    const c = cellAt(px, py); if (!c) return;
+    const N = cur.size, start = c[1] * N + c[0], k = sel;
+    if (prog[start]) return;
+    if (cur.grid[start] !== k) { hint('Esse é o número ' + (cur.grid[start] + 1) + '. Escolha essa cor embaixo.'); return; }
+    const seen = new Uint8Array(N * N), order = [start]; seen[start] = 1;
+    for (let h = 0; h < order.length; h++) {
+      const i = order[h], x = i % N, y = (i / N) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+        const j = ny * N + nx; if (seen[j] || prog[j] || cur.grid[j] !== k) continue; seen[j] = 1; order.push(j);
+      }
+    }
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const per = reduce ? order.length : Math.max(6, Math.ceil(order.length / 18));
+    let p = 0; const me = cur;
+    (function step() {
+      if (cur !== me) return;
+      const end = Math.min(order.length, p + per);
+      for (; p < end; p++) { const i = order[p]; if (!prog[i]) { prog[i] = 1; rem[k]--; } }
+      pop(k); req();
+      if (p < order.length) requestAnimationFrame(step); else afterPaint(k);
+    })();
+  }
+
+  /* gestos */
+  const ptrs = new Map(); let gst = null;
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener('pointerdown', (e) => {
+    ensureAudio(); cv.setPointerCapture(e.pointerId);
+    const p = pos(e); ptrs.set(e.pointerId, p);
+    if (ptrs.size === 1) {
+      if (tool === 'move' || e.button === 1 || e.button === 2) gst = { type: 'pan', lx: p.x, ly: p.y };
+      else if (tool === 'brush') { gst = { type: 'paint', lx: p.x, ly: p.y }; brushAt(p.x, p.y); }
+      else gst = { type: 'bucket', sx: p.x, sy: p.y, moved: false };
+    } else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      gst = { type: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, s0: view.s, cx: (mx - view.ox) / view.s, cy: (my - view.oy) / view.s };
+    }
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId) || !gst) return;
+    const p = pos(e), prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, p);
+    if (gst.type === 'paint') { brushLine(gst.lx, gst.ly, p.x, p.y); gst.lx = p.x; gst.ly = p.y; }
+    else if (gst.type === 'pan') { view.ox += p.x - prev.x; view.oy += p.y - prev.y; clampView(); req(); }
+    else if (gst.type === 'bucket') { if (Math.hypot(p.x - gst.sx, p.y - gst.sy) > 10) gst.moved = true; }
+    else if (gst.type === 'pinch' && ptrs.size >= 2) {
+      const [a, b] = [...ptrs.values()];
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, d = Math.hypot(a.x - b.x, a.y - b.y);
+      view.s = Math.max(view.fit * 0.8, Math.min(70, gst.s0 * d / gst.d0));
+      view.ox = mx - gst.cx * view.s; view.oy = my - gst.cy * view.s; clampView(); req();
+    }
+  });
+  const up = (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    if (gst && gst.type === 'bucket' && !gst.moved && ptrs.size === 1 && e.type === 'pointerup') bucketAt(gst.sx, gst.sy);
+    ptrs.delete(e.pointerId);
+    if (ptrs.size === 0) gst = null;
+    else if (gst && gst.type === 'pinch') { const [p] = [...ptrs.values()]; gst = { type: 'pan', lx: p.x, ly: p.y }; }
+  };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('contextmenu', (e) => e.preventDefault());
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); const p = pos(e); zoomAt(p.x, p.y, view.s * Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+
+  document.querySelectorAll('.tools .seg button').forEach((b) => b.addEventListener('click', () => {
+    tool = b.dataset.tool;
+    document.querySelectorAll('.tools .seg button').forEach((o) => { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b); });
+    hint(tool === 'bucket' ? 'Balde: toque num número e pinta tudo que está junto' : tool === 'move' ? 'Arraste para mover o desenho' : 'Pincel: toque ou arraste o dedo para pintar');
+  }));
+  $('#zin').addEventListener('click', () => zoomAt(W / 2, H / 2, view.s * 1.5));
+  $('#zout').addEventListener('click', () => zoomAt(W / 2, H / 2, view.s / 1.5));
+  $('#snd').addEventListener('click', () => { muted = !muted; store.set('mute', muted ? '1' : '0'); setSnd(); ensureAudio(); pop(3); });
+  $('#back').addEventListener('click', closePic);
+  let rT = 0;
+  $('#restart').addEventListener('click', () => {
+    const b = $('#restart');
+    if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = 'Apagar tudo?'; clearTimeout(rT); rT = setTimeout(() => { b.classList.remove('arm'); b.textContent = 'Recomeçar'; }, 3000); return; }
+    b.classList.remove('arm'); b.textContent = 'Recomeçar';
+    prog.fill(0); rem = cur.counts.slice(); sel = 0; saveProg(cur, prog);
+    for (let k = 0; k < cur.pal.length; k++) updateSwatch(k); markSel(); updatePerc(); fit(); req();
+  });
+  new ResizeObserver(() => { if (!cur) return; const oldFit = view.fit; resize(); const N = cur.size; const nf = (Math.min(W, H) * 0.94) / N; if (Math.abs(view.s - oldFit) < 0.01) fit(); else { view.fit = nf; clampView(); } req(); }).observe(stage);
+
+  /* ---------- celebração ---------- */
+  function celebrate() {
+    fanfare();
+    const big = $('#donecv'); drawThumb(big, cur, prog);
+    $('#done-msg').textContent = 'Você pintou "' + cur.name + '" inteirinho!';
+    $('#done').hidden = false;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = $('#confetti'), x = c.getContext('2d'); c.hidden = false;
+    const w = innerWidth, h = innerHeight, d = Math.min(devicePixelRatio || 1, 2);
+    c.width = w * d; c.height = h * d; x.setTransform(d, 0, 0, d, 0, 0);
+    const cols = cur.pal.concat(['#ff5a7a', '#ffd23f', '#4f8dff']);
+    const bits = Array.from({ length: 120 }, () => ({ x: Math.random() * w, y: -20 - Math.random() * h * 0.6, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, s: 6 + Math.random() * 6, c: cols[(Math.random() * cols.length) | 0], r: Math.random() * 6 }));
+    const t0 = performance.now();
+    (function f(t) {
+      const el = t - t0; x.clearRect(0, 0, w, h);
+      bits.forEach((b) => { b.x += b.vx; b.y += b.vy; b.vy += 0.04; b.r += 0.08; x.fillStyle = b.c; x.save(); x.translate(b.x, b.y); x.rotate(Math.round(b.r) * Math.PI / 4); x.fillRect(-b.s / 2, -b.s / 2, b.s, b.s); x.restore(); });
+      if (el < 3200) requestAnimationFrame(f); else { c.hidden = true; }
+    })(t0);
+  }
+  $('#donesee').addEventListener('click', () => { $('#done').hidden = true; });
+  $('#donenext').addEventListener('click', () => { $('#done').hidden = true; closePic(); });
+
+  /* ---------- importar foto ---------- */
+  let impImg = null, impRes = null, impSize = 32, impK = 12;
+  function openImporter() { $('#importer').hidden = false; }
+  function closeImporter() { $('#importer').hidden = true; }
+  $('#impcancel').addEventListener('click', closeImporter);
+  $('#importer').addEventListener('click', (e) => { if (e.target.id === 'importer') closeImporter(); });
+  const segPick = (id, cb) => document.querySelectorAll(id + ' button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll(id + ' button').forEach((o) => o.classList.toggle('on', o === b)); cb(+b.dataset.v);
+  }));
+  segPick('#optSize', (v) => { impSize = v; runImport(); });
+  segPick('#optColors', (v) => { impK = v; runImport(); });
+  $('#file').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    $('#file-label').textContent = 'Carregando…';
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => { impImg = img; $('#file-label').textContent = 'Trocar imagem'; runImport(); };
+    img.onerror = () => { $('#file-label').textContent = 'Não consegui abrir essa imagem. Tente outra.'; };
+    img.src = url;
+  });
+  function runImport() {
+    if (!impImg) return;
+    impRes = quantize(impImg, impSize, impK);
+    const box = $('#imp-prev'); box.textContent = '';
+    const c = document.createElement('canvas'); drawThumb(c, { size: impSize, pal: impRes.pal, grid: impRes.grid }, new Uint8Array(impSize * impSize).fill(1));
+    box.appendChild(c); $('#impok').disabled = false;
+  }
+  $('#impok').addEventListener('click', () => {
+    if (!impRes) return;
+    const name = ($('#impname').value || 'Meu desenho').trim().slice(0, 24) || 'Meu desenho';
+    const rec = { id: 'c' + Date.now().toString(36), name, size: impSize, pal: impRes.pal, g: impRes.grid.map((v) => v.toString(36)).join('') };
+    customs.unshift(rec);
+    store.set('custom', JSON.stringify(customs));
+    rebuild(); closeImporter();
+    impImg = null; impRes = null; $('#impok').disabled = true; $('#file').value = ''; $('#file-label').textContent = 'Escolher imagem';
+    $('#imp-prev').innerHTML = '<em>A prévia aparece aqui</em>';
+    openPic(pics.find((p) => p.id === rec.id));
+  });
+
+  function quantize(img, S, K) {
+    const m = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - m) / 2, sy = (img.naturalHeight - m) / 2;
+    const M = Math.max(S, Math.min(m, S * 8));
+    const mid = document.createElement('canvas'); mid.width = mid.height = M;
+    const mc = mid.getContext('2d'); mc.fillStyle = '#fff'; mc.fillRect(0, 0, M, M); mc.imageSmoothingQuality = 'high'; mc.drawImage(img, sx, sy, m, m, 0, 0, M, M);
+    const sm = document.createElement('canvas'); sm.width = sm.height = S;
+    const sc = sm.getContext('2d', { willReadFrequently: true }); sc.imageSmoothingQuality = 'high'; sc.drawImage(mid, 0, 0, S, S);
+    const d = sc.getImageData(0, 0, S, S).data, n = S * S, P = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { P[i * 3] = d[i * 4]; P[i * 3 + 1] = d[i * 4 + 1]; P[i * 3 + 2] = d[i * 4 + 2]; }
+    const dist = (i, c) => { const r = P[i * 3] - c[0], g = P[i * 3 + 1] - c[1], b = P[i * 3 + 2] - c[2]; return 2 * r * r + 4 * g * g + 3 * b * b; };
+    let seed = 7; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const cents = [[P[0], P[1], P[2]]], dm = new Float64Array(n).fill(Infinity);
+    while (cents.length < K) {
+      let tot = 0; const last = cents[cents.length - 1];
+      for (let i = 0; i < n; i++) { const v = dist(i, last); if (v < dm[i]) dm[i] = v; tot += dm[i]; }
+      if (tot === 0) break;
+      let r = rnd() * tot, pick = 0; for (let i = 0; i < n; i++) { r -= dm[i]; if (r <= 0) { pick = i; break; } }
+      cents.push([P[pick * 3], P[pick * 3 + 1], P[pick * 3 + 2]]);
+    }
+    const lab = new Int32Array(n);
+    for (let it = 0; it < 16; it++) {
+      const sum = cents.map(() => [0, 0, 0, 0]);
+      for (let i = 0; i < n; i++) { let best = 0, bv = Infinity; for (let k = 0; k < cents.length; k++) { const v = dist(i, cents[k]); if (v < bv) { bv = v; best = k; } } lab[i] = best; const s = sum[best]; s[0] += P[i * 3]; s[1] += P[i * 3 + 1]; s[2] += P[i * 3 + 2]; s[3]++; }
+      cents.forEach((c, k) => { const s = sum[k]; if (s[3]) { c[0] = s[0] / s[3]; c[1] = s[1] / s[3]; c[2] = s[2] / s[3]; } });
+    }
+    for (let i = 0; i < n; i++) {
+      const x = i % S, y = (i / S) | 0, nb = [];
+      if (x > 0) nb.push(lab[i - 1]); if (x < S - 1) nb.push(lab[i + 1]); if (y > 0) nb.push(lab[i - S]); if (y < S - 1) nb.push(lab[i + S]);
+      if (nb.length && nb.every((v) => v !== lab[i])) { const cnt = {}; nb.forEach((v) => cnt[v] = (cnt[v] || 0) + 1); lab[i] = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0]; }
+    }
+    const cnt = cents.map(() => 0); for (let i = 0; i < n; i++) cnt[lab[i]]++;
+    const order = cents.map((_, k) => k).filter((k) => cnt[k] > 0).sort((a, b) => cnt[b] - cnt[a]);
+    const remap = new Map(order.map((k, i) => [k, i]));
+    return { pal: order.map((k) => hex(cents[k])), grid: Array.from(lab, (v) => remap.get(v)) };
+  }
+
+  /* ---------- início ---------- */
+  rebuild(); setSnd(); renderGallery();
+  window.addEventListener('pagehide', () => { if (cur) saveProg(cur, prog); });
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+</script>
+</body>
+</html>

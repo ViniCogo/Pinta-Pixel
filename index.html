@@ -158,7 +158,8 @@ button:focus-visible, input:focus-visible, label:focus-within { outline: 3px sol
 .imp-prev { display: grid; place-items: center; background: var(--stage); border-radius: 10px; padding: 10px; }
 .imp-prev canvas { width: min(220px, 70vw); aspect-ratio: 1; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); background: var(--paper); }
 .imp-prev em { font-style: normal; color: var(--ink-2); font-weight: 700; font-size: 14px; padding: 30px 0; }
-.opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 800; }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 8px 10px; font-weight: 800; flex-wrap: wrap; }
+.imp-tip { font-size: 13px; color: var(--ink-2); font-weight: 500; margin-top: -6px; }
 .opt input { flex: 1; min-width: 0; max-width: 220px; border: 3px solid var(--ink); border-radius: 10px; padding: 6px 10px; font: inherit; font-weight: 700; color: var(--ink); background: var(--paper); user-select: text; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 .btn { border: 3px solid var(--ink); border-radius: 12px; padding: 8px 16px; font-weight: 800; background: var(--paper); }
@@ -235,11 +236,12 @@ button:focus-visible, input:focus-visible, label:focus-within { outline: 3px sol
     </label>
     <div class="imp-prev" id="imp-prev"><em>A prévia aparece aqui</em></div>
     <div class="opt"><span>Quadradinhos</span>
-      <div class="seg" id="optSize"><button data-v="24">24</button><button data-v="32" class="on">32</button><button data-v="48">48</button></div>
+      <div class="seg" id="optSize"><button data-v="32">32</button><button data-v="48">48</button><button data-v="64" class="on">64</button><button data-v="96">96</button></div>
     </div>
     <div class="opt"><span>Cores</span>
-      <div class="seg" id="optColors"><button data-v="8">8</button><button data-v="12" class="on">12</button><button data-v="16">16</button></div>
+      <div class="seg" id="optColors"><button data-v="12">12</button><button data-v="16">16</button><button data-v="24" class="on">24</button></div>
     </div>
+    <p class="imp-tip">Mais quadradinhos e mais cores deixam a foto mais parecida, mas dão mais trabalho para pintar. A imagem é cortada em quadrado pelo centro.</p>
     <label class="opt"><span>Nome</span><input id="impname" value="Meu desenho" maxlength="24" autocomplete="off"></label>
     <div class="actions">
       <button class="btn" id="impcancel">Cancelar</button>
@@ -785,7 +787,7 @@ const ART = (function () {
   $('#donenext').addEventListener('click', () => { $('#done').hidden = true; closePic(); });
 
   /* ---------- importar foto ---------- */
-  let impImg = null, impRes = null, impSize = 32, impK = 12;
+  let impImg = null, impRes = null, impSize = 64, impK = 24;
   function openImporter() { $('#importer').hidden = false; }
   function closeImporter() { $('#importer').hidden = true; }
   $('#impcancel').addEventListener('click', closeImporter);

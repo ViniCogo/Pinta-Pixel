@@ -1,6 +1,6 @@
 // Pinta Pixel: guarda o jogo e as fontes no aparelho para funcionar offline.
-// Ao publicar uma versão nova do jogo, troque o número abaixo (v2 -> v3).
-const CACHE = 'pinta-pixel-v2';
+// Ao publicar uma versão nova do jogo, troque o número abaixo (v3 -> v4).
+const CACHE = 'pinta-pixel-v3';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

@@ -126,6 +126,12 @@ button:focus-visible, input:focus-visible, label:focus-within { outline: 3px sol
 .seg button.on { background: var(--sun); }
 .seg svg { width: 18px; height: 18px; flex: none; }
 .tools .grow { flex: 1; }
+@media (max-width: 440px) {
+  .seg .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tools .seg button { padding: 6px 9px; }
+  .tools .icon-btn { width: 38px; height: 38px; }
+  .tools { gap: 6px; }
+}
 .palette {
   display: flex; gap: 10px; overflow-x: auto; padding: 12px 12px 14px; background: var(--paper);
   border-top: 3px solid var(--ink); scroll-snap-type: x proximity; scrollbar-width: none;
@@ -155,12 +161,16 @@ button:focus-visible, input:focus-visible, label:focus-within { outline: 3px sol
 .sheet p { margin: 0; color: var(--ink-2); font-weight: 500; }
 .file-btn { display: flex; align-items: center; justify-content: center; gap: 8px; border: 3px dashed var(--ink); border-radius: 12px; padding: 12px; font-weight: 800; cursor: pointer; background: var(--bg); }
 .file-btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.imp-prev { display: grid; place-items: center; background: var(--stage); border-radius: 10px; padding: 10px; }
-.imp-prev canvas { width: min(220px, 70vw); aspect-ratio: 1; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); background: var(--paper); }
-.imp-prev em { font-style: normal; color: var(--ink-2); font-weight: 700; font-size: 14px; padding: 30px 0; }
+.crop { position: relative; display: grid; place-items: center; gap: 6px; background: var(--stage); border-radius: 10px; padding: 10px; }
+.crop canvas { width: min(280px, 74vw); aspect-ratio: 1; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); background: var(--paper); touch-action: none; cursor: grab; }
+.crop canvas:active { cursor: grabbing; }
+.crop em { font-style: normal; color: var(--ink-2); font-weight: 700; font-size: 14px; padding: 30px 0; }
+.crop-busy { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 99px; pointer-events: none; }
+.crop-info { font-size: 13px; font-weight: 800; color: var(--ink-2); font-variant-numeric: tabular-nums; text-align: center; }
+.opt input[type="range"] { flex: 1; min-width: 0; max-width: 220px; accent-color: var(--accent); }
 .opt { display: flex; align-items: center; justify-content: space-between; gap: 8px 10px; font-weight: 800; flex-wrap: wrap; }
 .imp-tip { font-size: 13px; color: var(--ink-2); font-weight: 500; margin-top: -6px; }
-.opt input { flex: 1; min-width: 0; max-width: 220px; border: 3px solid var(--ink); border-radius: 10px; padding: 6px 10px; font: inherit; font-weight: 700; color: var(--ink); background: var(--paper); user-select: text; }
+.opt input:not([type="range"]) { flex: 1; min-width: 0; max-width: 220px; border: 3px solid var(--ink); border-radius: 10px; padding: 6px 10px; font: inherit; font-weight: 700; color: var(--ink); background: var(--paper); user-select: text; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 .btn { border: 3px solid var(--ink); border-radius: 12px; padding: 8px 16px; font-weight: 800; background: var(--paper); }
 .btn.primary { background: var(--accent); color: #fff; box-shadow: 3px 3px 0 var(--ink); }
@@ -206,16 +216,19 @@ button:focus-visible, input:focus-visible, label:focus-within { outline: 3px sol
   <div class="tools">
     <div class="seg" role="group" aria-label="Ferramenta">
       <button data-tool="brush" class="on" aria-pressed="true">
-        <svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#ff5a7a" d="M5 0h3v3H7v1H6v1H5V4H4V3h1z"/><path fill="#2a2350" d="M3 4h1v1h1v1H4v1H2v1H0V6h1V5h2z"/></svg>Pincel
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#ff5a7a" d="M5 0h3v3H7v1H6v1H5V4H4V3h1z"/><path fill="#2a2350" d="M3 4h1v1h1v1H4v1H2v1H0V6h1V5h2z"/></svg><span class="lbl">Pincel</span>
       </button>
       <button data-tool="bucket" aria-pressed="false">
-        <svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#2a2350" d="M1 2h5v1h1v4H2V6H1z"/><path fill="#4f8dff" d="M2 3h4v3H3V5H2z"/><path fill="#4f8dff" d="M7 3h1v3H7z"/></svg>Balde
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#2a2350" d="M1 2h5v1h1v4H2V6H1z"/><path fill="#4f8dff" d="M2 3h4v3H3V5H2z"/><path fill="#4f8dff" d="M7 3h1v3H7z"/></svg><span class="lbl">Balde</span>
       </button>
       <button data-tool="move" aria-pressed="false">
-        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" fill="#2a2350"><path d="M3 0h2v1H3zM0 3h1v2H0zM7 3h1v2H7zM3 7h2v1H3zM3.5 1h1v6h-1zM1 3.5h6v1H1z"/></svg>Mover
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" fill="#2a2350"><path d="M3 0h2v1H3zM0 3h1v2H0zM7 3h1v2H7zM3 7h2v1H3zM3.5 1h1v6h-1zM1 3.5h6v1H1z"/></svg><span class="lbl">Mover</span>
       </button>
     </div>
     <span class="grow"></span>
+    <button class="icon-btn" id="find" aria-label="Mostrar onde falta a cor escolhida">
+      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" fill="currentColor"><path d="M1 0h3v1H1zM0 1h1v3H0zM4 1h1v3H4zM1 4h3v1H1zM4 4h1v1H4zM5 5h1v1H5zM6 6h1v1H6zM7 7h1v1H7z"/><path fill="#ff5a7a" d="M1 1h3v3H1z"/></svg>
+    </button>
     <button class="icon-btn" id="zout" aria-label="Diminuir zoom">−</button>
     <button class="icon-btn" id="zin" aria-label="Aumentar zoom">+</button>
     <button class="icon-btn" id="snd" aria-label="Som ligado">
@@ -234,14 +247,24 @@ button:focus-visible, input:focus-visible, label:focus-within { outline: 3px sol
       <svg width="22" height="22" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#2a2350" d="M0 2h8v5H0z"/><path fill="#a9dcff" d="M1 3h6v3H1z"/><path fill="#72cf6a" d="M1 5h2V4h1v1h1V4h1v1h1v1H1z"/><path fill="#ffd23f" d="M5 3h1v1H5z"/></svg>
       <span id="file-label">Escolher imagem</span>
     </label>
-    <div class="imp-prev" id="imp-prev"><em>A prévia aparece aqui</em></div>
+    <div class="crop" id="crop">
+      <em id="cropempty">A prévia aparece aqui</em>
+      <canvas id="cropcv" hidden aria-label="Prévia do desenho. Arraste para ajustar o recorte."></canvas>
+      <span class="crop-busy" id="cropbusy" hidden>Ajustando…</span>
+      <span class="crop-info" id="cropinfo"></span>
+    </div>
+    <label class="opt"><span>Aproximar</span><input type="range" id="cropzoom" min="1" max="5" step="0.05" value="1" disabled></label>
+    <p class="imp-tip">Arraste a prévia com o dedo para centralizar o rosto e use "Aproximar" até ele ocupar quase todo o quadro.</p>
     <div class="opt"><span>Quadradinhos</span>
-      <div class="seg" id="optSize"><button data-v="32">32</button><button data-v="48">48</button><button data-v="64" class="on">64</button><button data-v="96">96</button></div>
+      <div class="seg" id="optSize"><button data-v="64">64</button><button data-v="96">96</button><button data-v="128" class="on">128</button><button data-v="160">160</button></div>
     </div>
     <div class="opt"><span>Cores</span>
-      <div class="seg" id="optColors"><button data-v="12">12</button><button data-v="16">16</button><button data-v="24" class="on">24</button></div>
+      <div class="seg" id="optColors"><button data-v="16">16</button><button data-v="24">24</button><button data-v="32" class="on">32</button><button data-v="48">48</button></div>
     </div>
-    <p class="imp-tip">Mais quadradinhos e mais cores deixam a foto mais parecida, mas dão mais trabalho para pintar. A imagem é cortada em quadrado pelo centro.</p>
+    <div class="opt"><span>Realçar cores</span>
+      <div class="seg" id="optBoost"><button data-v="1" class="on">Sim</button><button data-v="0">Não</button></div>
+    </div>
+    <p class="imp-tip">Para rostos, 128 quadradinhos com 32 cores já fica bem parecido. 160 com 48 cores fica ainda mais fiel, mas vira um projeto de muitos dias.</p>
     <label class="opt"><span>Nome</span><input id="impname" value="Meu desenho" maxlength="24" autocomplete="off"></label>
     <div class="actions">
       <button class="btn" id="impcancel">Cancelar</button>
@@ -476,10 +499,10 @@ const ART = (function () {
   /* ---------- desenhos ---------- */
   let customs = [];
   try { customs = JSON.parse(store.get('custom') || '[]'); } catch (e) { customs = []; }
-  const decode = (c) => ({ id: c.id, name: c.name, size: c.size, pal: c.pal, grid: Array.from(c.g, (ch) => parseInt(ch, 36)), custom: true });
+  const decode = (c) => ({ id: c.id, name: c.name, size: c.size, pal: c.pal, grid: Array.from(c.g, (ch) => (c.e === 2 ? ch.charCodeAt(0) - 48 : parseInt(ch, 36))), custom: true });
   let pics = [];
   const rebuild = () => { pics = customs.map(decode).concat(ART); pics.forEach(prep); };
-  function prep(p) { p.greys = p.pal.map(greyOf); p.counts = p.pal.map(() => 0); p.grid.forEach((v) => p.counts[v]++); }
+  function prep(p) { p.greys = p.pal.map(greyOf); p.palRGB = p.pal.map(rgb); p.greyRGB = p.pal.map((h) => { const v = 250 - (1 - lum(h)) * 52; return [v - 3, v - 1, v + 3]; }); p.counts = p.pal.map(() => 0); p.grid.forEach((v) => p.counts[v]++); }
   function getProg(p) {
     const n = p.size * p.size, s = store.get('prog:' + p.id), a = new Uint8Array(n);
     if (s && s.length === n) for (let i = 0; i < n; i++) a[i] = s.charCodeAt(i) === 49 ? 1 : 0;
@@ -556,7 +579,7 @@ const ART = (function () {
     $('#pname').textContent = p.name;
     $('#gallery').hidden = true; $('#paint').hidden = false;
     resize(); fit(); buildPalette(); updatePerc(); req();
-    hint('Toque na cor e depois nos quadradinhos com o mesmo número');
+    hint(view.s < numsMin() ? 'Faça pinça com dois dedos para aproximar e ver os números' : 'Toque na cor e depois nos quadradinhos com o mesmo número');
   }
   function closePic() {
     if (cur) saveProg(cur, prog);
@@ -585,6 +608,8 @@ const ART = (function () {
   }
   const req = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); };
 
+  let off = null, offImg = null, flash = null;
+  const numsMin = () => 10;
   function draw() {
     if (!cur) return;
     const N = cur.size, s = view.s, g = cur.grid, pal = cur.pal, gs = cur.greys;
@@ -593,9 +618,18 @@ const ART = (function () {
     const L = Math.round(view.ox), T = Math.round(view.oy), R = Math.round(view.ox + N * s), B = Math.round(view.oy + N * s);
     ctx.fillStyle = 'rgba(42,35,80,.18)'; ctx.fillRect(L + 4, T + 4, R - L, B - T);
     ctx.fillStyle = C.line; ctx.fillRect(L, T, R - L, B - T);
+    if (s < 7) {
+      if (!off || off.width !== N) { off = document.createElement('canvas'); off.width = off.height = N; offImg = off.getContext('2d').createImageData(N, N); }
+      const d = offImg.data, hl = rgb(C.hl), pr = cur.palRGB, gr = cur.greyRGB;
+      for (let i = 0; i < N * N; i++) { const v = g[i], c = prog[i] ? pr[v] : v === sel ? hl : gr[v], o = i * 4; d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255; }
+      off.getContext('2d').putImageData(offImg, 0, 0);
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(off, L, T, R - L, B - T);
+      drawFlash();
+      return;
+    }
     const x0 = Math.max(0, Math.floor(-view.ox / s)), x1 = Math.min(N - 1, Math.floor((W - view.ox) / s));
     const y0 = Math.max(0, Math.floor(-view.oy / s)), y1 = Math.min(N - 1, Math.floor((H - view.oy) / s));
-    const gap = s >= 7 ? 1 : 0, nums = s >= 11;
+    const gap = s >= 7 ? 1 : 0, nums = s >= numsMin();
     const X = (x) => Math.round(view.ox + x * s), Y = (y) => Math.round(view.oy + y * s);
     for (let y = y0; y <= y1; y++) {
       const ya = Y(y), yb = Y(y + 1);
@@ -607,17 +641,29 @@ const ART = (function () {
     }
     if (nums) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = `800 ${Math.max(8, Math.floor(s * 0.5))}px 'Baloo 2', system-ui, sans-serif`;
+      const f1 = `800 ${Math.max(7, Math.floor(s * 0.52))}px 'Baloo 2', system-ui, sans-serif`, f2 = `800 ${Math.max(7, Math.floor(s * 0.42))}px 'Baloo 2', system-ui, sans-serif`;
+      let curF = '';
       for (let y = y0; y <= y1; y++) {
         const ya = Y(y), yb = Y(y + 1);
         for (let x = x0; x <= x1; x++) {
           const i = y * N + x; if (prog[i]) continue;
           const v = g[i], xa = X(x), xb = X(x + 1);
           ctx.fillStyle = v === sel ? C.ink : C.ink2;
+          const want = v >= 9 ? f2 : f1; if (want !== curF) { ctx.font = want; curF = want; }
           ctx.fillText(String(v + 1), xa + (xb - xa - gap) / 2, ya + (yb - ya - gap) / 2 + s * 0.06);
         }
       }
     }
+    drawFlash();
+  }
+  function drawFlash() {
+    if (!flash) return;
+    const t = (performance.now() - flash.t) / 1500; if (t >= 1) { flash = null; return; }
+    const N = cur.size, s = view.s, x = flash.i % N, y = (flash.i / N) | 0;
+    const r = s * (0.9 + 2.2 * (1 - t)), cx = view.ox + (x + 0.5) * s, cy = view.oy + (y + 0.5) * s;
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,90,122,' + (1 - t).toFixed(2) + ')';
+    ctx.strokeRect(Math.round(cx - r / 2), Math.round(cy - r / 2), Math.round(r), Math.round(r));
+    req();
   }
 
   function buildPalette() {
@@ -713,6 +759,7 @@ const ART = (function () {
     const p = pos(e); ptrs.set(e.pointerId, p);
     if (ptrs.size === 1) {
       if (tool === 'move' || e.button === 1 || e.button === 2) gst = { type: 'pan', lx: p.x, ly: p.y };
+      else if (view.s < 8) gst = { type: 'zoomtap', sx: p.x, sy: p.y, moved: false };
       else if (tool === 'brush') { gst = { type: 'paint', lx: p.x, ly: p.y }; brushAt(p.x, p.y); }
       else gst = { type: 'bucket', sx: p.x, sy: p.y, moved: false };
     } else if (ptrs.size === 2) {
@@ -727,6 +774,7 @@ const ART = (function () {
     if (gst.type === 'paint') { brushLine(gst.lx, gst.ly, p.x, p.y); gst.lx = p.x; gst.ly = p.y; }
     else if (gst.type === 'pan') { view.ox += p.x - prev.x; view.oy += p.y - prev.y; clampView(); req(); }
     else if (gst.type === 'bucket') { if (Math.hypot(p.x - gst.sx, p.y - gst.sy) > 10) gst.moved = true; }
+    else if (gst.type === 'zoomtap') { if (Math.hypot(p.x - gst.sx, p.y - gst.sy) > 10) gst = { type: 'pan' }; }
     else if (gst.type === 'pinch' && ptrs.size >= 2) {
       const [a, b] = [...ptrs.values()];
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -737,6 +785,7 @@ const ART = (function () {
   const up = (e) => {
     if (!ptrs.has(e.pointerId)) return;
     if (gst && gst.type === 'bucket' && !gst.moved && ptrs.size === 1 && e.type === 'pointerup') bucketAt(gst.sx, gst.sy);
+    if (gst && gst.type === 'zoomtap' && ptrs.size === 1 && e.type === 'pointerup') { zoomAt(gst.sx, gst.sy, 22); hint('Aproximei para você ver os números'); }
     ptrs.delete(e.pointerId);
     if (ptrs.size === 0) gst = null;
     else if (gst && gst.type === 'pinch') { const [p] = [...ptrs.values()]; gst = { type: 'pan', lx: p.x, ly: p.y }; }
@@ -750,6 +799,22 @@ const ART = (function () {
     document.querySelectorAll('.tools .seg button').forEach((o) => { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b); });
     hint(tool === 'bucket' ? 'Balde: toque num número e pinta tudo que está junto' : tool === 'move' ? 'Arraste para mover o desenho' : 'Pincel: toque ou arraste o dedo para pintar');
   }));
+  $('#find').addEventListener('click', () => {
+    if (!cur) return;
+    if (rem[sel] <= 0) { hint('Essa cor já está pronta!'); return; }
+    const N = cur.size, cx = (W / 2 - view.ox) / view.s, cy = (H / 2 - view.oy) / view.s;
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < N * N; i++) {
+      if (prog[i] || cur.grid[i] !== sel) continue;
+      const dx = (i % N) + 0.5 - cx, dy = ((i / N) | 0) + 0.5 - cy, d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best < 0) return;
+    view.s = Math.max(view.s, 24);
+    view.ox = W / 2 - ((best % N) + 0.5) * view.s; view.oy = H / 2 - (((best / N) | 0) + 0.5) * view.s;
+    clampView(); flash = { i: best, t: performance.now() }; req();
+    hint('Faltam ' + rem[sel] + ' quadradinhos da cor ' + (sel + 1));
+  });
   $('#zin').addEventListener('click', () => zoomAt(W / 2, H / 2, view.s * 1.5));
   $('#zout').addEventListener('click', () => zoomAt(W / 2, H / 2, view.s / 1.5));
   $('#snd').addEventListener('click', () => { muted = !muted; store.set('mute', muted ? '1' : '0'); setSnd(); ensureAudio(); pop(3); });
@@ -787,7 +852,9 @@ const ART = (function () {
   $('#donenext').addEventListener('click', () => { $('#done').hidden = true; closePic(); });
 
   /* ---------- importar foto ---------- */
-  let impImg = null, impRes = null, impSize = 64, impK = 24;
+  let impImg = null, impRes = null, impSize = 128, impK = 32, impBoost = 1, qT = 0;
+  const crop = { cx: 0, cy: 0, z: 1 };
+  const cropcv = $('#cropcv'), zoomIn = $('#cropzoom');
   function openImporter() { $('#importer').hidden = false; }
   function closeImporter() { $('#importer').hidden = true; }
   $('#impcancel').addEventListener('click', closeImporter);
@@ -795,69 +862,207 @@ const ART = (function () {
   const segPick = (id, cb) => document.querySelectorAll(id + ' button').forEach((b) => b.addEventListener('click', () => {
     document.querySelectorAll(id + ' button').forEach((o) => o.classList.toggle('on', o === b)); cb(+b.dataset.v);
   }));
-  segPick('#optSize', (v) => { impSize = v; runImport(); });
-  segPick('#optColors', (v) => { impK = v; runImport(); });
+  segPick('#optSize', (v) => { impSize = v; scheduleImport(0); });
+  segPick('#optColors', (v) => { impK = v; scheduleImport(0); });
+  segPick('#optBoost', (v) => { impBoost = v; scheduleImport(0); });
+
+  function resetImporter() {
+    impImg = null; impRes = null; clearTimeout(qT);
+    $('#impok').disabled = true; $('#file').value = ''; $('#file-label').textContent = 'Escolher imagem';
+    cropcv.hidden = true; $('#cropempty').hidden = false; $('#cropbusy').hidden = true; $('#cropinfo').textContent = '';
+    zoomIn.value = 1; zoomIn.disabled = true;
+  }
   $('#file').addEventListener('change', (e) => {
     const f = e.target.files && e.target.files[0]; if (!f) return;
     $('#file-label').textContent = 'Carregando…';
     const url = URL.createObjectURL(f), img = new Image();
-    img.onload = () => { impImg = img; $('#file-label').textContent = 'Trocar imagem'; runImport(); };
+    img.onload = () => {
+      impImg = img;
+      const w = img.naturalWidth, h = img.naturalHeight;
+      crop.z = 1; crop.cx = w / 2; crop.cy = h > w ? h * 0.42 : h / 2; // em fotos em pé, o rosto costuma ficar mais para cima
+      zoomIn.value = 1; zoomIn.disabled = false;
+      $('#file-label').textContent = 'Trocar imagem';
+      cropcv.hidden = false; $('#cropempty').hidden = true;
+      quickPreview(); scheduleImport(0);
+    };
     img.onerror = () => { $('#file-label').textContent = 'Não consegui abrir essa imagem. Tente outra.'; };
     img.src = url;
   });
-  function runImport() {
-    if (!impImg) return;
-    impRes = quantize(impImg, impSize, impK);
-    const box = $('#imp-prev'); box.textContent = '';
-    const c = document.createElement('canvas'); drawThumb(c, { size: impSize, pal: impRes.pal, grid: impRes.grid }, new Uint8Array(impSize * impSize).fill(1));
-    box.appendChild(c); $('#impok').disabled = false;
+
+  function cropRect() {
+    const w = impImg.naturalWidth, h = impImg.naturalHeight, side = Math.min(w, h) / crop.z;
+    crop.cx = Math.min(Math.max(crop.cx, side / 2), w - side / 2);
+    crop.cy = Math.min(Math.max(crop.cy, side / 2), h - side / 2);
+    return { sx: crop.cx - side / 2, sy: crop.cy - side / 2, side };
   }
+  function quickPreview() {
+    if (!impImg) return;
+    const r = cropRect(), S = impSize;
+    if (cropcv.width !== S) { cropcv.width = cropcv.height = S; }
+    const x = cropcv.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    x.fillStyle = '#fff'; x.fillRect(0, 0, S, S);
+    x.drawImage(impImg, r.sx, r.sy, r.side, r.side, 0, 0, S, S);
+  }
+  function scheduleImport(delay) {
+    if (!impImg) return;
+    clearTimeout(qT); $('#cropbusy').hidden = false; $('#impok').disabled = true;
+    qT = setTimeout(runImport, delay + 30); // deixa o aviso "Ajustando…" aparecer antes do cálculo
+  }
+  function runImport() {
+    qT = 0; if (!impImg) return;
+    impRes = quantize(impImg, cropRect(), impSize, impK, impBoost);
+    drawThumb(cropcv, { size: impSize, pal: impRes.pal, grid: impRes.grid }, new Uint8Array(impSize * impSize).fill(1));
+    $('#cropbusy').hidden = true; $('#impok').disabled = false;
+    $('#cropinfo').textContent = (impSize * impSize).toLocaleString('pt-BR') + ' quadradinhos · ' + impRes.pal.length + ' cores';
+  }
+  function setZoom(z) { crop.z = Math.max(1, Math.min(5, z)); zoomIn.value = crop.z; }
+  zoomIn.addEventListener('input', () => { setZoom(+zoomIn.value); quickPreview(); scheduleImport(250); });
+
+  /* arrastar e pinçar na prévia */
+  const cptrs = new Map(); let cg = null;
+  cropcv.addEventListener('pointerdown', (e) => {
+    if (!impImg) return; cropcv.setPointerCapture(e.pointerId);
+    cptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (cptrs.size === 2) { const [a, b] = [...cptrs.values()]; cg = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: crop.z }; }
+  });
+  cropcv.addEventListener('pointermove', (e) => {
+    if (!cptrs.has(e.pointerId)) return;
+    const prev = cptrs.get(e.pointerId), p = { x: e.clientX, y: e.clientY }; cptrs.set(e.pointerId, p);
+    if (cptrs.size === 1) {
+      const r = cropRect(), k = r.side / cropcv.getBoundingClientRect().width;
+      crop.cx -= (p.x - prev.x) * k; crop.cy -= (p.y - prev.y) * k;
+    } else if (cg) {
+      const [a, b] = [...cptrs.values()]; setZoom(cg.z0 * Math.hypot(a.x - b.x, a.y - b.y) / cg.d0);
+    }
+    clearTimeout(qT); quickPreview();
+  });
+  const cup = (e) => {
+    if (!cptrs.has(e.pointerId)) return;
+    cptrs.delete(e.pointerId); if (cptrs.size < 2) cg = null;
+    if (cptrs.size === 0) scheduleImport(60);
+  };
+  cropcv.addEventListener('pointerup', cup); cropcv.addEventListener('pointercancel', cup);
+  cropcv.addEventListener('wheel', (e) => { if (!impImg) return; e.preventDefault(); setZoom(crop.z * Math.exp(-e.deltaY * 0.0015)); quickPreview(); scheduleImport(250); }, { passive: false });
+
   $('#impok').addEventListener('click', () => {
+    if (qT) { clearTimeout(qT); runImport(); }
     if (!impRes) return;
     const name = ($('#impname').value || 'Meu desenho').trim().slice(0, 24) || 'Meu desenho';
-    const rec = { id: 'c' + Date.now().toString(36), name, size: impSize, pal: impRes.pal, g: impRes.grid.map((v) => v.toString(36)).join('') };
+    const rec = { id: 'c' + Date.now().toString(36), name, size: impSize, pal: impRes.pal, e: 2, g: impRes.grid.map((v) => String.fromCharCode(48 + v)).join('') };
     customs.unshift(rec);
-    store.set('custom', JSON.stringify(customs));
-    rebuild(); closeImporter();
-    impImg = null; impRes = null; $('#impok').disabled = true; $('#file').value = ''; $('#file-label').textContent = 'Escolher imagem';
-    $('#imp-prev').innerHTML = '<em>A prévia aparece aqui</em>';
+    if (!store.set('custom', JSON.stringify(customs))) {
+      customs.shift();
+      $('#cropinfo').textContent = 'Sem espaço para salvar. Apague um desenho seu antigo e tente de novo.';
+      return;
+    }
+    rebuild(); closeImporter(); resetImporter();
     openPic(pics.find((p) => p.id === rec.id));
   });
 
-  function quantize(img, S, K) {
-    const m = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - m) / 2, sy = (img.naturalHeight - m) / 2;
-    const M = Math.max(S, Math.min(m, S * 8));
-    const mid = document.createElement('canvas'); mid.width = mid.height = M;
-    const mc = mid.getContext('2d'); mc.fillStyle = '#fff'; mc.fillRect(0, 0, M, M); mc.imageSmoothingQuality = 'high'; mc.drawImage(img, sx, sy, m, m, 0, 0, M, M);
-    const sm = document.createElement('canvas'); sm.width = sm.height = S;
-    const sc = sm.getContext('2d', { willReadFrequently: true }); sc.imageSmoothingQuality = 'high'; sc.drawImage(mid, 0, 0, S, S);
-    const d = sc.getImageData(0, 0, S, S).data, n = S * S, P = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { P[i * 3] = d[i * 4]; P[i * 3 + 1] = d[i * 4 + 1]; P[i * 3 + 2] = d[i * 4 + 2]; }
-    const dist = (i, c) => { const r = P[i * 3] - c[0], g = P[i * 3 + 1] - c[1], b = P[i * 3 + 2] - c[2]; return 2 * r * r + 4 * g * g + 3 * b * b; };
+  /* ---------- foto → pintura por número ----------
+     1. recorta e reduz a foto com média de áreas (sem serrilhado)
+     2. trabalha no espaço de cor OKLab, que segue a percepção humana (tons de pele ficam fiéis)
+     3. "realçar" estica o contraste e aviva um pouco as cores
+     4. k-means escolhe a paleta; cores quase iguais são unidas para a criança conseguir diferenciar */
+  const LIN = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { const c = i / 255; LIN[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function toOklab(r, g, b, out, o) {
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    out[o] = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s;
+    out[o + 1] = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+    out[o + 2] = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+  }
+  function oklabHex(L, a, b) {
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+    const lin = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+    return hex(lin.map((v) => { v = Math.max(0, Math.min(1, v)); return 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055); }));
+  }
+
+  function quantize(img, r, S, K, boost) {
+    const F = 3, M = S * F;
+    // redução em etapas (metade por vez) para fotos grandes manterem a nitidez
+    let src = img, sx = r.sx, sy = r.sy, sd = r.side;
+    while (sd > M * 2) {
+      const hs = Math.ceil(sd / 2), t = document.createElement('canvas'); t.width = t.height = hs;
+      const tx = t.getContext('2d'); tx.imageSmoothingEnabled = true; tx.imageSmoothingQuality = 'high';
+      tx.fillStyle = '#fff'; tx.fillRect(0, 0, hs, hs); tx.drawImage(src, sx, sy, sd, sd, 0, 0, hs, hs);
+      src = t; sx = 0; sy = 0; sd = hs;
+    }
+    const c = document.createElement('canvas'); c.width = c.height = M;
+    const cx = c.getContext('2d', { willReadFrequently: true }); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, M, M); cx.drawImage(src, sx, sy, sd, sd, 0, 0, M, M);
+    const d = cx.getImageData(0, 0, M, M).data, n = S * S, P = new Float32Array(n * 3);
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+      let rr = 0, gg = 0, bb = 0;
+      for (let j = 0; j < F; j++) for (let i = 0; i < F; i++) { const o = ((y * F + j) * M + x * F + i) * 4; rr += LIN[d[o]]; gg += LIN[d[o + 1]]; bb += LIN[d[o + 2]]; }
+      const q = F * F; toOklab(rr / q, gg / q, bb / q, P, (y * S + x) * 3);
+    }
+    if (boost) {
+      const Ls = new Float32Array(n); for (let i = 0; i < n; i++) Ls[i] = P[i * 3];
+      Ls.sort(); const lo = Ls[Math.floor(n * 0.01)], hi = Ls[Math.floor(n * 0.99)];
+      if (hi - lo > 0.05) for (let i = 0; i < n; i++) {
+        const L = P[i * 3], st = 0.04 + (L - lo) / (hi - lo) * 0.93;
+        P[i * 3] = Math.max(0, Math.min(1, L * 0.3 + st * 0.7));
+      }
+      for (let i = 0; i < n; i++) { P[i * 3 + 1] *= 1.15; P[i * 3 + 2] *= 1.15; }
+    }
+    const dist = (i, C, k) => { const a = P[i * 3] - C[k * 3], b = P[i * 3 + 1] - C[k * 3 + 1], e = P[i * 3 + 2] - C[k * 3 + 2]; return a * a + b * b + e * e; };
     let seed = 7; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-    const cents = [[P[0], P[1], P[2]]], dm = new Float64Array(n).fill(Infinity);
-    while (cents.length < K) {
-      let tot = 0; const last = cents[cents.length - 1];
-      for (let i = 0; i < n; i++) { const v = dist(i, last); if (v < dm[i]) dm[i] = v; tot += dm[i]; }
-      if (tot === 0) break;
-      let r = rnd() * tot, pick = 0; for (let i = 0; i < n; i++) { r -= dm[i]; if (r <= 0) { pick = i; break; } }
-      cents.push([P[pick * 3], P[pick * 3 + 1], P[pick * 3 + 2]]);
+    // k-means++ (semente fixa: a mesma foto sempre gera o mesmo desenho)
+    const C = new Float32Array(K * 3); let k = 1;
+    C[0] = P[0]; C[1] = P[1]; C[2] = P[2];
+    const dm = new Float64Array(n).fill(Infinity);
+    while (k < K) {
+      let tot = 0;
+      for (let i = 0; i < n; i++) { const v = dist(i, C, k - 1); if (v < dm[i]) dm[i] = v; tot += dm[i]; }
+      if (tot <= 1e-9) break;
+      let rr = rnd() * tot, pick = 0; for (let i = 0; i < n; i++) { rr -= dm[i]; if (rr <= 0) { pick = i; break; } }
+      C[k * 3] = P[pick * 3]; C[k * 3 + 1] = P[pick * 3 + 1]; C[k * 3 + 2] = P[pick * 3 + 2]; k++;
     }
-    const lab = new Int32Array(n);
-    for (let it = 0; it < 16; it++) {
-      const sum = cents.map(() => [0, 0, 0, 0]);
-      for (let i = 0; i < n; i++) { let best = 0, bv = Infinity; for (let k = 0; k < cents.length; k++) { const v = dist(i, cents[k]); if (v < bv) { bv = v; best = k; } } lab[i] = best; const s = sum[best]; s[0] += P[i * 3]; s[1] += P[i * 3 + 1]; s[2] += P[i * 3 + 2]; s[3]++; }
-      cents.forEach((c, k) => { const s = sum[k]; if (s[3]) { c[0] = s[0] / s[3]; c[1] = s[1] / s[3]; c[2] = s[2] / s[3]; } });
+    const lab = new Int32Array(n).fill(-1), sum = new Float64Array(k * 4);
+    for (let it = 0; it < 14; it++) {
+      sum.fill(0); let changed = 0;
+      for (let i = 0; i < n; i++) {
+        let best = 0, bv = Infinity;
+        for (let q = 0; q < k; q++) { const v = dist(i, C, q); if (v < bv) { bv = v; best = q; } }
+        if (lab[i] !== best) { lab[i] = best; changed++; }
+        const o = best * 4; sum[o] += P[i * 3]; sum[o + 1] += P[i * 3 + 1]; sum[o + 2] += P[i * 3 + 2]; sum[o + 3]++;
+      }
+      for (let q = 0; q < k; q++) { const o = q * 4; if (sum[o + 3]) { C[q * 3] = sum[o] / sum[o + 3]; C[q * 3 + 1] = sum[o + 1] / sum[o + 3]; C[q * 3 + 2] = sum[o + 2] / sum[o + 3]; } }
+      if (changed < n * 0.002) break;
     }
+    // une cores quase idênticas (difíceis de diferenciar na paleta)
+    const cnt = new Array(k).fill(0); for (let i = 0; i < n; i++) cnt[lab[i]]++;
+    const alias = Array.from({ length: k }, (_, q) => q), TH = 0.03 * 0.03;
+    for (let a = 0; a < k; a++) {
+      if (!cnt[a] || alias[a] !== a) continue;
+      for (let b = a + 1; b < k; b++) {
+        if (!cnt[b] || alias[b] !== b) continue;
+        const x = C[a * 3] - C[b * 3], y = C[a * 3 + 1] - C[b * 3 + 1], z = C[a * 3 + 2] - C[b * 3 + 2];
+        if (x * x + y * y + z * z < TH) {
+          const t = cnt[a] + cnt[b];
+          for (let j = 0; j < 3; j++) C[a * 3 + j] = (C[a * 3 + j] * cnt[a] + C[b * 3 + j] * cnt[b]) / t;
+          cnt[a] = t; cnt[b] = 0; alias[b] = a;
+        }
+      }
+    }
+    for (let i = 0; i < n; i++) lab[i] = alias[lab[i]];
+    // quadradinhos totalmente isolados viram a cor dos vizinhos
+    const out = lab.slice();
     for (let i = 0; i < n; i++) {
       const x = i % S, y = (i / S) | 0, nb = [];
       if (x > 0) nb.push(lab[i - 1]); if (x < S - 1) nb.push(lab[i + 1]); if (y > 0) nb.push(lab[i - S]); if (y < S - 1) nb.push(lab[i + S]);
-      if (nb.length && nb.every((v) => v !== lab[i])) { const cnt = {}; nb.forEach((v) => cnt[v] = (cnt[v] || 0) + 1); lab[i] = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0]; }
+      if (nb.length && nb.every((v) => v !== lab[i])) { const ct = {}; let bv = -1, bk = nb[0]; nb.forEach((v) => { ct[v] = (ct[v] || 0) + 1; if (ct[v] > bv) { bv = ct[v]; bk = v; } }); out[i] = bk; }
     }
-    const cnt = cents.map(() => 0); for (let i = 0; i < n; i++) cnt[lab[i]]++;
-    const order = cents.map((_, k) => k).filter((k) => cnt[k] > 0).sort((a, b) => cnt[b] - cnt[a]);
-    const remap = new Map(order.map((k, i) => [k, i]));
-    return { pal: order.map((k) => hex(cents[k])), grid: Array.from(lab, (v) => remap.get(v)) };
+    const fc = new Array(k).fill(0); for (let i = 0; i < n; i++) fc[out[i]]++;
+    const order = []; for (let q = 0; q < k; q++) if (fc[q] > 0) order.push(q);
+    order.sort((a, b) => fc[b] - fc[a]);
+    const remap = new Int32Array(k); order.forEach((q, i) => { remap[q] = i; });
+    return { pal: order.map((q) => oklabHex(C[q * 3], C[q * 3 + 1], C[q * 3 + 2])), grid: Array.from(out, (v) => remap[v]) };
   }
 
   /* ---------- início ---------- */
